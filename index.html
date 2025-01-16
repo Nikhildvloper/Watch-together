@@ -119,23 +119,31 @@
             videoRef.on('value', (snapshot) => {
                 const data = snapshot.val();
                 if (data) {
-                    if (data.state === 'playing' && videoElement.paused) {
-                        videoElement.currentTime = data.currentTime;
-                        videoElement.play();
-                    } else if (data.state === 'paused' && !videoElement.paused) {
-                        videoElement.currentTime = data.currentTime;
-                        videoElement.pause();
+                    if (data.source === 'url') {
+                        if (videoElement.src !== data.url) {
+                            videoElement.src = data.url;
+                            videoElement.load();
+                        }
+                        if (data.state === 'playing' && videoElement.paused) {
+                            videoElement.currentTime = data.currentTime;
+                            videoElement.play();
+                        } else if (data.state === 'paused' && !videoElement.paused) {
+                            videoElement.currentTime = data.currentTime;
+                            videoElement.pause();
+                        }
                     }
                 }
             });
         }
 
-        function updateVideoState(videoElement, state) {
+        function updateVideoState(videoElement, state, source, url = '') {
             clearTimeout(debounceTimer);
             debounceTimer = setTimeout(() => {
                 videoRef.set({
                     currentTime: videoElement.currentTime,
-                    state: state
+                    state: state,
+                    source: source,
+                    url: url
                 });
             }, 300); // Debounce interval
         }
@@ -152,7 +160,7 @@
                     videoElement.load();
                     videoElement.style.display = 'block';
                     videoElement.play();
-                    updateVideoState(videoElement, 'playing');
+                    updateVideoState(videoElement, 'playing', 'url', videoLink);
                 } else {
                     alert('Please enter a valid video URL.');
                 }
@@ -167,27 +175,23 @@
                     videoElement.load();
                     videoElement.style.display = 'block';
                     videoElement.play();
-                    updateVideoState(videoElement, 'playing');
+                    updateVideoState(videoElement, 'playing', 'file');
                 }
             });
 
             videoElement.addEventListener('play', () => {
-                updateVideoState(videoElement, 'playing');
+                updateVideoState(videoElement, 'playing', 'file');
             });
 
             videoElement.addEventListener('pause', () => {
-                updateVideoState(videoElement, 'paused');
+                updateVideoState(videoElement, 'paused', 'file');
             });
 
             videoElement.addEventListener('seeked', () => {
                 clearTimeout(debounceTimer);
                 debounceTimer = setTimeout(() => {
-                    updateVideoState(videoElement, videoElement.paused ? 'paused' : 'playing');
+                    updateVideoState(videoElement, videoElement.paused ? 'paused' : 'playing', 'file');
                 }, 500); // Debounce interval for seeking
-            });
-
-            videoElement.addEventListener('waiting', () => {
-                syncVideoState(videoElement);
             });
 
             syncVideoState(videoElement);
