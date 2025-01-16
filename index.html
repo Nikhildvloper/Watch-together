@@ -4,91 +4,60 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Video and Edit Text View</title>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js"></script>
     <style>
+        /* Same styles as before */
         body {
             font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            background-color: #f4f4f4;
             display: flex;
             justify-content: center;
             align-items: center;
             height: 100vh;
-            flex-direction: column;
+            margin: 0;
+            background-color: #f4f4f4;
         }
+
         .container {
-            background-color: white;
-            border-radius: 10px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            width: 80%;
-            max-width: 800px;
-            padding: 20px;
             text-align: center;
-        }
-        h1 {
-            margin-bottom: 20px;
-            color: #333;
-        }
-        #video-container {
             width: 100%;
-            height: 400px;
-            background-color: #000;
-            margin-bottom: 20px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            border-radius: 10px;
+            max-width: 600px;
+            padding: 20px;
+            background-color: white;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
         }
+
+        #video-container {
+            margin: 20px 0;
+        }
+
         #video-view {
-            width: 90%;
-            height: 100%;
-            display: none;
+            width: 100%;
+            max-width: 500px;
+            border: 1px solid #ccc;
         }
+
         textarea {
             width: 100%;
             height: 100px;
             padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            font-size: 16px;
-            margin-bottom: 20px;
-        }
-        .button-container {
-            display: flex;
-            justify-content: space-between;
-            gap: 10px;
-            margin-bottom: 20px;
-        }
-        button, label {
-            padding: 10px 20px;
-            background-color: #1d557d;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            font-size: 16px;
-            cursor: pointer;
-        }
-        button:hover, label:hover {
-            background-color: #165a72;
-        }
-        input[type="file"] {
-            display: none;
-        }
-        label {
-            width: 100%;
-            text-align: center;
+            margin-top: 10px;
+            box-sizing: border-box;
         }
 
-        /* Responsive design */
-        @media (max-width: 600px) {
-            .button-container {
-                flex-direction: column;
-                align-items: center;
-            }
-            button, label {
-                width: 100%;
-                margin-bottom: 10px;
-            }
+        .button-container {
+            margin-top: 20px;
+        }
+
+        button,
+        label {
+            padding: 10px 20px;
+            margin: 10px;
+            cursor: pointer;
+        }
+
+        input[type="file"] {
+            display: none;
         }
     </style>
 </head>
@@ -111,93 +80,104 @@
 </div>
 
 <script>
-    const gitHubToken = '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'; // Replace with your GitHub personal access token
-    const repoOwner = 'Nikhildvloper'; // Replace with your GitHub username
-    const repoName = 'Watch-together'; // Replace with your repository name
-    const timeFilePath = 'time.txt'; // Path to your time.txt file
-    const stateFilePath = 'state.txt'; // Path to your state.txt file
+// Firebase configuration
+const firebaseConfig = {
+    apiKey: "AIzaSyBm9IzydkUehldXr_Gi_AJ-PX0FUGJax5A",
+    authDomain: "watch-together-330a9.firebaseapp.com",
+    projectId: "watch-together-330a9",
+    storageBucket: "watch-together-330a9.firebasestorage.app",
+    messagingSenderId: "676714623194",
+    appId: "1:676714623194:web:2a2088531e1c7a4f6335e3",
+    measurementId: "G-F9QSQNQS36"
+};
 
-    let videoState = 'stopped'; // Initial state of the video
+// Initialize Firebase
+const app = firebase.initializeApp(firebaseConfig);
+const db = firebase.database(app);
 
-    document.getElementById('load-video-btn').addEventListener('click', function() {
-        const videoLink = document.getElementById('text-editor').value.trim();
-        if (videoLink) {
-            const videoElement = document.getElementById('video-view');
-            const videoSource = document.getElementById('video-source');
-            videoSource.src = videoLink;
-            videoElement.load();
-            videoElement.style.display = 'block';
-            updateGitHubFiles(videoElement.currentTime, 'playing');
+// Get reference to video state in Firebase
+const videoStateRef = db.ref('videoState');
+
+const videoElement = document.getElementById('video-view');
+const videoSource = document.getElementById('video-source');
+const videoFileInput = document.getElementById('video-file');
+const loadVideoBtn = document.getElementById('load-video-btn');
+const textEditor = document.getElementById('text-editor');
+
+// Listen for changes in video state from Firebase
+videoStateRef.on('value', (snapshot) => {
+    const state = snapshot.val();
+    if (state && state.url) {
+        videoSource.src = state.url;
+        videoElement.load();
+        videoElement.currentTime = state.currentTime || 0;
+        if (state.isPlaying) {
+            videoElement.play();
         } else {
-            alert('Please enter a valid video URL.');
+            videoElement.pause();
         }
-    });
-
-    document.getElementById('video-file').addEventListener('change', function(event) {
-        const file = event.target.files[0];
-        if (file) {
-            const videoElement = document.getElementById('video-view');
-            const videoSource = document.getElementById('video-source');
-            const videoURL = URL.createObjectURL(file);
-            videoSource.src = videoURL;
-            videoElement.load();
-            videoElement.style.display = 'block';
-            updateGitHubFiles(videoElement.currentTime, 'playing');
-        }
-    });
-
-    document.getElementById('video-view').addEventListener('play', function() {
-        videoState = 'playing';
-        updateGitHubFiles(this.currentTime, videoState);
-    });
-
-    document.getElementById('video-view').addEventListener('pause', function() {
-        videoState = 'paused';
-        updateGitHubFiles(this.currentTime, videoState);
-    });
-
-    function updateGitHubFiles(currentTime, state) {
-        const timeData = currentTime.toString();
-        const stateData = state;
-
-        // Update time.txt
-        updateFileOnGitHub(timeFilePath, timeData);
-        
-        // Update state.txt
-        updateFileOnGitHub(stateFilePath, stateData);
     }
+});
 
-    function updateFileOnGitHub(filePath, content) {
-        const headers = new Headers();
-        headers.append('Authorization', `token ${gitHubToken}`);
-        headers.append('Content-Type', 'application/json');
+// Load video from URL
+loadVideoBtn.addEventListener('click', function() {
+    const videoLink = textEditor.value.trim();
+    if (videoLink) {
+        videoSource.src = videoLink;
+        videoElement.load();
+        videoElement.play();
 
-        fetch(`https://api.github.com/repos/${repoOwner}/${repoName}/contents/${filePath}`, {
-            method: 'GET',
-            headers: headers
-        })
-        .then(response => response.json())
-        .then(fileData => {
-            const sha = fileData.sha; // Get the file's SHA for the update
-            const encodedContent = btoa(content); // Base64 encode the content
-
-            const updateData = {
-                message: 'Update video time and state',
-                sha: sha,
-                content: encodedContent
-            };
-
-            fetch(`https://api.github.com/repos/${repoOwner}/${repoName}/contents/${filePath}`, {
-                method: 'PUT',
-                headers: headers,
-                body: JSON.stringify(updateData)
-            })
-            .then(response => response.json())
-            .then(data => console.log('File updated:', data))
-            .catch(error => console.error('Error updating file:', error));
-        })
-        .catch(error => console.error('Error fetching file data:', error));
+        // Update video state in Firebase
+        videoStateRef.set({
+            url: videoLink,
+            isPlaying: true,
+            currentTime: 0
+        });
+    } else {
+        alert('Please enter a valid video URL.');
     }
+});
+
+// Handle file input for local video selection
+videoFileInput.addEventListener('change', function(event) {
+    const file = event.target.files[0];
+    if (file) {
+        const videoURL = URL.createObjectURL(file);
+        videoSource.src = videoURL;
+        videoElement.load();
+        videoElement.play();
+
+        // Update video state in Firebase
+        videoStateRef.set({
+            url: videoURL,
+            isPlaying: true,
+            currentTime: 0
+        });
+    }
+});
+
+// Sync play/pause and current time
+videoElement.addEventListener('play', function() {
+    videoStateRef.update({
+        isPlaying: true,
+        currentTime: videoElement.currentTime
+    });
+});
+
+videoElement.addEventListener('pause', function() {
+    videoStateRef.update({
+        isPlaying: false,
+        currentTime: videoElement.currentTime
+    });
+});
+
+videoElement.addEventListener('timeupdate', function() {
+    if (!videoElement.paused) {
+        videoStateRef.update({
+            currentTime: videoElement.currentTime
+        });
+    }
+});
 </script>
 
 </body>
