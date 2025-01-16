@@ -123,16 +123,23 @@ videoStateRef.on('value', (snapshot) => {
 loadVideoBtn.addEventListener('click', function() {
     const videoLink = textEditor.value.trim();
     if (videoLink) {
-        videoSource.src = videoLink;
-        videoElement.load();
-        videoElement.play();
+        // Check if URL is valid
+        const videoURL = videoLink.startsWith('http') ? videoLink : null;
+        
+        if (videoURL) {
+            videoSource.src = videoURL;
+            videoElement.load();
+            videoElement.play();
 
-        // Update video state in Firebase
-        videoStateRef.set({
-            url: videoLink,
-            isPlaying: true,
-            currentTime: 0
-        });
+            // Update video state in Firebase
+            videoStateRef.set({
+                url: videoURL,
+                isPlaying: true,
+                currentTime: 0
+            });
+        } else {
+            alert('Please enter a valid video URL.');
+        }
     } else {
         alert('Please enter a valid video URL.');
     }
