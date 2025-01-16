@@ -77,22 +77,27 @@
             Your browser does not support the video tag.
         </video>
     </div>
-    <textarea id="text-editor" placeholder="Edit your text here..."></textarea>
+    <textarea id="text-editor" placeholder="Enter video URL here..."></textarea>
     <button id="load-video-btn">Load Video</button>
 </div>
 
 <script>
     document.getElementById('load-video-btn').addEventListener('click', function() {
-        // Get the video link (You can replace this with dynamic input if needed)
-        var videoLink = 'https://www.w3schools.com/html/mov_bbb.mp4'; // Example video URL
+        // Get the video URL from the text editor (textarea)
+        var videoLink = document.getElementById('text-editor').value.trim();
         
-        // Set the source of the video element
-        var videoElement = document.getElementById('video-view');
-        var videoSource = document.getElementById('video-source');
-        
-        videoSource.src = videoLink;
-        videoElement.load(); // Reload video element with new source
-        videoElement.style.display = 'block'; // Show video
+        // Check if the URL is valid (basic check for non-empty string)
+        if(videoLink) {
+            // Set the video source and reload the video element
+            var videoElement = document.getElementById('video-view');
+            var videoSource = document.getElementById('video-source');
+            
+            videoSource.src = videoLink;
+            videoElement.load(); // Reload video element with new source
+            videoElement.style.display = 'block'; // Show video
+        } else {
+            alert('Please enter a valid video URL.');
+        }
     });
 </script>
 
