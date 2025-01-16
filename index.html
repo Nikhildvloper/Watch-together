@@ -65,6 +65,18 @@
         button:hover {
             background-color: #165a72;
         }
+        input[type="file"] {
+            display: none;
+        }
+        label {
+            background-color: #1d557d;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 10px;
+        }
     </style>
 </head>
 <body>
@@ -78,7 +90,11 @@
         </video>
     </div>
     <textarea id="text-editor" placeholder="Enter video URL here..."></textarea>
-    <button id="load-video-btn">Load Video</button>
+    <button id="load-video-btn">Load Video from URL</button>
+    
+    <!-- File input to select local video file -->
+    <label for="video-file">Choose Video File</label>
+    <input type="file" id="video-file" accept="video/*">
 </div>
 
 <script>
@@ -97,6 +113,22 @@
             videoElement.style.display = 'block'; // Show video
         } else {
             alert('Please enter a valid video URL.');
+        }
+    });
+
+    // Handle file input for local video selection
+    document.getElementById('video-file').addEventListener('change', function(event) {
+        var file = event.target.files[0];
+        if (file) {
+            var videoElement = document.getElementById('video-view');
+            var videoSource = document.getElementById('video-source');
+            
+            // Create a URL for the selected file
+            var videoURL = URL.createObjectURL(file);
+            
+            videoSource.src = videoURL;
+            videoElement.load(); // Reload video element with new source
+            videoElement.style.display = 'block'; // Show video
         }
     });
 </script>
