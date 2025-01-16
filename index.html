@@ -113,6 +113,7 @@
         const videoRef = database.ref('video');
 
         let isSyncing = false;
+        let debounceTimer;
 
         function syncVideoState(videoElement) {
             videoRef.on('value', (snapshot) => {
@@ -130,8 +131,8 @@
         }
 
         function updateVideoState(videoElement, state) {
-            clearTimeout(isSyncing);
-            isSyncing = setTimeout(() => {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(() => {
                 videoRef.set({
                     currentTime: videoElement.currentTime,
                     state: state
@@ -179,7 +180,14 @@
             });
 
             videoElement.addEventListener('seeked', () => {
-                updateVideoState(videoElement, videoElement.paused ? 'paused' : 'playing');
+                clearTimeout(debounceTimer);
+                debounceTimer = setTimeout(() => {
+                    updateVideoState(videoElement, videoElement.paused ? 'paused' : 'playing');
+                }, 500); // Debounce interval for seeking
+            });
+
+            videoElement.addEventListener('waiting', () => {
+                syncVideoState(videoElement);
             });
 
             syncVideoState(videoElement);
