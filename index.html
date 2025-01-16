@@ -112,10 +112,14 @@
         const database = firebase.database();
         const videoRef = database.ref('video');
 
+        let isSyncing = false;
+        let debounceTimer;
+
         function syncVideoState(videoElement) {
             videoRef.on('value', (snapshot) => {
                 const data = snapshot.val();
-                if (data) {
+                if (data && !isSyncing) {
+                    isSyncing = true;
                     if (data.state === 'playing') {
                         videoElement.currentTime = data.currentTime;
                         videoElement.play();
@@ -123,15 +127,23 @@
                         videoElement.currentTime = data.currentTime;
                         videoElement.pause();
                     }
+                    isSyncing = false;
                 }
             });
         }
 
         function updateVideoState(videoElement, state) {
-            videoRef.set({
-                currentTime: videoElement.currentTime,
-                state: state
-            });
+            if (isSyncing) return;
+            isSyncing = true;
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(() => {
+                videoRef.set({
+                    currentTime: videoElement.currentTime,
+                    state: state
+                }).then(() => {
+                    isSyncing = false;
+                });
+            }, 300); // Debounce interval
         }
 
         document.addEventListener('DOMContentLoaded', () => {
@@ -173,10 +185,8 @@
                 updateVideoState(videoElement, 'paused');
             });
 
-            videoElement.addEventListener('timeupdate', () => {
-                if (!videoElement.paused) {
-                    updateVideoState(videoElement, 'playing');
-                }
+            videoElement.addEventListener('seeked', () => {
+                updateVideoState(videoElement, videoElement.paused ? 'paused' : 'playing');
             });
 
             syncVideoState(videoElement);
