@@ -108,6 +108,7 @@ const textEditor = document.getElementById('text-editor');
 videoStateRef.on('value', (snapshot) => {
     const state = snapshot.val();
     if (state && state.url) {
+        console.log('Loaded video URL:', state.url);
         videoSource.src = state.url;
         videoElement.load();
         videoElement.currentTime = state.currentTime || 0;
@@ -123,13 +124,16 @@ videoStateRef.on('value', (snapshot) => {
 loadVideoBtn.addEventListener('click', function() {
     const videoLink = textEditor.value.trim();
     if (videoLink) {
-        // Check if URL is valid
         const videoURL = videoLink.startsWith('http') ? videoLink : null;
         
         if (videoURL) {
+            console.log('Loading video from URL:', videoURL);
             videoSource.src = videoURL;
             videoElement.load();
-            videoElement.play();
+            videoElement.play().catch((error) => {
+                console.error('Error playing video:', error);
+                alert('Unable to play video. Please check the URL.');
+            });
 
             // Update video state in Firebase
             videoStateRef.set({
@@ -150,9 +154,13 @@ videoFileInput.addEventListener('change', function(event) {
     const file = event.target.files[0];
     if (file) {
         const videoURL = URL.createObjectURL(file);
+        console.log('Loading local video file:', videoURL);
         videoSource.src = videoURL;
         videoElement.load();
-        videoElement.play();
+        videoElement.play().catch((error) => {
+            console.error('Error playing video:', error);
+            alert('Unable to play video.');
+        });
 
         // Update video state in Firebase
         videoStateRef.set({
