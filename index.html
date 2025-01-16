@@ -78,7 +78,7 @@
             width: 100%;
             text-align: center;
         }
-        
+
         /* Responsive design */
         @media (max-width: 600px) {
             .button-container {
@@ -111,39 +111,93 @@
 </div>
 
 <script>
+    const gitHubToken = 'YOUR_GITHUB_TOKEN'; // Replace with your GitHub personal access token
+    const repoOwner = 'YOUR_GITHUB_USERNAME'; // Replace with your GitHub username
+    const repoName = 'YOUR_REPOSITORY_NAME'; // Replace with your repository name
+    const timeFilePath = 'time.txt'; // Path to your time.txt file
+    const stateFilePath = 'state.txt'; // Path to your state.txt file
+
+    let videoState = 'stopped'; // Initial state of the video
+
     document.getElementById('load-video-btn').addEventListener('click', function() {
-        // Get the video URL from the text editor (textarea)
-        var videoLink = document.getElementById('text-editor').value.trim();
-        
-        // Check if the URL is valid (basic check for non-empty string)
-        if(videoLink) {
-            // Set the video source and reload the video element
-            var videoElement = document.getElementById('video-view');
-            var videoSource = document.getElementById('video-source');
-            
+        const videoLink = document.getElementById('text-editor').value.trim();
+        if (videoLink) {
+            const videoElement = document.getElementById('video-view');
+            const videoSource = document.getElementById('video-source');
             videoSource.src = videoLink;
-            videoElement.load(); // Reload video element with new source
-            videoElement.style.display = 'block'; // Show video
+            videoElement.load();
+            videoElement.style.display = 'block';
+            updateGitHubFiles(videoElement.currentTime, 'playing');
         } else {
             alert('Please enter a valid video URL.');
         }
     });
 
-    // Handle file input for local video selection
     document.getElementById('video-file').addEventListener('change', function(event) {
-        var file = event.target.files[0];
+        const file = event.target.files[0];
         if (file) {
-            var videoElement = document.getElementById('video-view');
-            var videoSource = document.getElementById('video-source');
-            
-            // Create a URL for the selected file
-            var videoURL = URL.createObjectURL(file);
-            
+            const videoElement = document.getElementById('video-view');
+            const videoSource = document.getElementById('video-source');
+            const videoURL = URL.createObjectURL(file);
             videoSource.src = videoURL;
-            videoElement.load(); // Reload video element with new source
-            videoElement.style.display = 'block'; // Show video
+            videoElement.load();
+            videoElement.style.display = 'block';
+            updateGitHubFiles(videoElement.currentTime, 'playing');
         }
     });
+
+    document.getElementById('video-view').addEventListener('play', function() {
+        videoState = 'playing';
+        updateGitHubFiles(this.currentTime, videoState);
+    });
+
+    document.getElementById('video-view').addEventListener('pause', function() {
+        videoState = 'paused';
+        updateGitHubFiles(this.currentTime, videoState);
+    });
+
+    function updateGitHubFiles(currentTime, state) {
+        const timeData = currentTime.toString();
+        const stateData = state;
+
+        // Update time.txt
+        updateFileOnGitHub(timeFilePath, timeData);
+        
+        // Update state.txt
+        updateFileOnGitHub(stateFilePath, stateData);
+    }
+
+    function updateFileOnGitHub(filePath, content) {
+        const headers = new Headers();
+        headers.append('Authorization', `token ${gitHubToken}`);
+        headers.append('Content-Type', 'application/json');
+
+        fetch(`https://api.github.com/repos/${repoOwner}/${repoName}/contents/${filePath}`, {
+            method: 'GET',
+            headers: headers
+        })
+        .then(response => response.json())
+        .then(fileData => {
+            const sha = fileData.sha; // Get the file's SHA for the update
+            const encodedContent = btoa(content); // Base64 encode the content
+
+            const updateData = {
+                message: 'Update video time and state',
+                sha: sha,
+                content: encodedContent
+            };
+
+            fetch(`https://api.github.com/repos/${repoOwner}/${repoName}/contents/${filePath}`, {
+                method: 'PUT',
+                headers: headers,
+                body: JSON.stringify(updateData)
+            })
+            .then(response => response.json())
+            .then(data => console.log('File updated:', data))
+            .catch(error => console.error('Error updating file:', error));
+        })
+        .catch(error => console.error('Error fetching file data:', error));
+    }
 </script>
 
 </body>
