@@ -1,22 +1,19 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Video View with Button</title>
-    <link rel="stylesheet" href="styles.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>File Picker</title>
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <div class="container">
-        <div class="video-container">
-            <video id="video" width="100%" controls>
-                <source src="video.mp4" type="video/mp4">
-                Your browser does not support the video tag.
-            </video>
-        </div>
-        <button id="actionButton" class="action-button">Click Me</button>
-    </div>
 
-    <script src="script.js"></script>
+  <div class="container">
+    <h1>Select a Video File</h1>
+    <input type="file" id="fileInput" accept="video/*" />
+    <button id="openVideoBtn">Open Video</button>
+  </div>
+
+  <script src="script.js"></script>
 </body>
 </html>
