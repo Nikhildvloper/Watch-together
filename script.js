@@ -15,9 +15,12 @@ firebase.initializeApp(firebaseConfig);
 
 const database = firebase.database();
 const videoRef = database.ref('video');
+const urlRef = database.ref('videoUrl');
 
 let isSyncing = false;
+let lastSyncedUrl = "";
 
+// Function to sync video state
 function syncVideoState(videoElement) {
     videoRef.on('value', (snapshot) => {
         const data = snapshot.val();
@@ -33,6 +36,7 @@ function syncVideoState(videoElement) {
     });
 }
 
+// Function to update video state
 function updateVideoState(videoElement, state) {
     clearTimeout(isSyncing);
     isSyncing = setTimeout(() => {
@@ -43,19 +47,41 @@ function updateVideoState(videoElement, state) {
     }, 300); // Debounce interval
 }
 
+// Function to sync video URL
+function syncVideoUrl(inputElement) {
+    urlRef.on('value', (snapshot) => {
+        const data = snapshot.val();
+        if (data && data !== lastSyncedUrl) {
+            lastSyncedUrl = data;
+            inputElement.value = data; // Update the edit box with the shared URL
+        }
+    });
+}
+
+// Function to update video URL
+function updateVideoUrl(newUrl) {
+    if (newUrl !== lastSyncedUrl) {
+        lastSyncedUrl = newUrl;
+        urlRef.set(newUrl);
+    }
+}
+
+// DOMContentLoaded event handler
 document.addEventListener('DOMContentLoaded', () => {
     const videoElement = document.getElementById('video-view');
     const videoSource = document.getElementById('video-source');
+    const urlInput = document.getElementById('text-editor');
 
     // Load video from URL
     document.getElementById('load-video-btn').addEventListener('click', () => {
-        const videoLink = document.getElementById('text-editor').value.trim();
+        const videoLink = urlInput.value.trim();
         if (videoLink) {
             videoSource.src = videoLink;
             videoElement.load();
             videoElement.style.display = 'block';
             videoElement.play();
             updateVideoState(videoElement, 'playing');
+            updateVideoUrl(videoLink); // Share the URL with other users
         } else {
             alert('Please enter a valid video URL.');
         }
@@ -87,4 +113,5 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     syncVideoState(videoElement);
+    syncVideoUrl(urlInput);
 });
